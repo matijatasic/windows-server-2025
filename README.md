@@ -189,7 +189,7 @@ Jede Phase beginnt mit einem Sicherungspunkt und endet mit einem Test. Befehle i
 |---|---|---|
 | 1 | Freien Speicher und Storage-Pool auf `pve01` prüfen (`pvesm status`) | erledigt: `local-lvm` für die VM, `local` für ISOs |
 | 2 | CPU-Flags dokumentieren: `lscpu \| grep -ow -e aes -e avx2` | offen |
-| 3 | ISOs: Windows Server 2025 (passend zum Key) und virtio-win stable, Prüfsummen vergleichen | in Arbeit |
+| 3 | ISOs: Windows Server 2025 (Evaluation Center, Umwandlung in Phase 3) und virtio-win stable; Microsoft veröffentlicht dort keine Prüfsumme, SHA256 wird notiert | in Arbeit |
 | 4 | Bestandsaufnahme Clients: Windows-Version, Konto-Typ, IP fest/DHCP, BitLocker | teilweise (alle Win 11 Pro) |
 | 5 | Datensicherung aller Benutzerprofile inkl. BitLocker-Schlüssel | offen |
 | 6 | Lokales Fallback-Admin-Konto auf jedem Client prüfen | offen |
@@ -243,7 +243,14 @@ Set-TimeZone -Id "W. Europe Standard Time"
 ```
 
 5. Alle Windows-Updates installieren, bis keine mehr angeboten werden (behebt bekannte Server-2025-DC-Fehler: Netzwerkprofil „Öffentlich“ nach Neustart, doppelte Schema-Einträge).
-6. Aktivieren (Key nur aus dem Passwortmanager, nicht in die Doku).
+6. **Evaluation-Version umwandeln und aktivieren** (Quelle des ISOs ist das Microsoft Evaluation Center). Muss **vor** dem Hochstufen passieren, ein DC mit Eval-Version lässt sich nicht mehr umwandeln. Key nur aus dem Passwortmanager, nicht in die Doku.
+
+```powershell
+DISM /online /Get-TargetEditions          # ServerStandard muss aufgeführt sein
+DISM /online /Set-Edition:ServerStandard /ProductKey:<KEY> /AcceptEula
+# Neustart, danach:
+slmgr /dlv                                # darf kein "Eval" mehr enthalten
+```
 7. **Snapshot „Basis-Installation“** in Proxmox.
 
 **Rollback:** VM löschen und neu anlegen; nach Schritt 7: Snapshot zurück.
@@ -462,4 +469,5 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 10.11.2026 | Umsetzung gestartet, Download Windows Server 2025 Standard. Doku-Struktur intern/öffentlich angelegt |
 | 11.11.2026 | Festgelegt: Name in der öffentlichen Fassung, Kontenkonzept mit drei Konten plus Notfallkonto, Repo-Aufteilung intern/öffentlich |
 | 11.11.2026 | Speicher geprüft: VM auf `local-lvm`, ISOs auf `local`. VM-ID 101 festgelegt |
+| 11.11.2026 | Installationsmedium: Evaluation-ISO, Umwandlung in Standard mit vorhandenem Key vor dem Hochstufen |
 
