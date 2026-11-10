@@ -16,7 +16,7 @@
 | **Projekt** | Eigene AD-Domäne für das Heimnetz: zentrale Anmeldung an allen Windows-Clients, getrennte Benutzer- und Admin-Konten, GPOs, Windows LAPS |
 | **Zeitraum** | Planung ab 21.10.2026, Umsetzung ab 10.11.2026 |
 | **Umsetzung** | Matija Tasic |
-| **Stand** | 10.11.2026, Installation von Windows Server 2025 läuft |
+| **Stand** | 11.11.2026, VM-Vorbereitung, Download Windows Server 2025 läuft |
 | **Plattform** | Windows Server 2025 Standard (Desktop Experience), Proxmox VE 9.2 auf Dell Wyse 5070, OPNsense, Proxmox Backup Server |
 
 > [!TIP]
@@ -126,8 +126,8 @@ Hostnamen: maximal 15 Zeichen (NetBIOS-Grenze), nur Buchstaben, Ziffern, Bindest
 | RAM | 4 GB fest, kein Ballooning | bei Trägheit auf 6 GB erhöhen |
 | Disk | VirtIO SCSI single, 60 GB, Cache Default, Discard, IO thread, SSD-Emulation | |
 | Netzwerk | VirtIO an `vmbr1`, VLAN-Tag 10 | |
-| Storage-Pool | offen | |
-| VM-ID | offen | |
+| Storage-Pool | `local-lvm` (lvmthin, 131 GiB frei) | Snapshots belegen im Thin-Pool zusätzlich Platz, daher nicht dauerhaft liegen lassen |
+| VM-ID | 101 | |
 | Sonstiges | vmgenid aktiv, QEMU Guest Agent, virtio-win (stable) | vmgenid schützt AD bei Restore/Snapshot-Rücksprung |
 
 > [!WARNING]
@@ -187,9 +187,9 @@ Jede Phase beginnt mit einem Sicherungspunkt und endet mit einem Test. Befehle i
 
 | Nr | Schritt | Status |
 |---|---|---|
-| 1 | Freien Speicher und Storage-Pool auf `pve01` prüfen (`pvesm status`) | offen |
+| 1 | Freien Speicher und Storage-Pool auf `pve01` prüfen (`pvesm status`) | erledigt: `local-lvm` für die VM, `local` für ISOs |
 | 2 | CPU-Flags dokumentieren: `lscpu \| grep -ow -e aes -e avx2` | offen |
-| 3 | ISOs: Windows Server 2025 (passend zum Key) und virtio-win stable, Prüfsummen vergleichen | erledigt (Installation läuft) |
+| 3 | ISOs: Windows Server 2025 (passend zum Key) und virtio-win stable, Prüfsummen vergleichen | in Arbeit |
 | 4 | Bestandsaufnahme Clients: Windows-Version, Konto-Typ, IP fest/DHCP, BitLocker | teilweise (alle Win 11 Pro) |
 | 5 | Datensicherung aller Benutzerprofile inkl. BitLocker-Schlüssel | offen |
 | 6 | Lokales Fallback-Admin-Konto auf jedem Client prüfen | offen |
@@ -436,7 +436,7 @@ Add-Computer -DomainName "home.example.com" -Restart
 
 ## 11. Offene Punkte
 
-- [ ] Storage-Pool und VM-ID (Aufgaben 1, 16)
+- [x] Storage-Pool `local-lvm` und VM-ID 101 (Aufgaben 1, 16)
 - [ ] CPU-Flags dokumentieren (2)
 - [ ] Bestandsaufnahme Clients vervollständigen (4)
 - [ ] Hostnamen DC und Clients (8)
@@ -459,6 +459,7 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 21.10.2026 | Planung, Scope festgelegt, Projekt pausiert bis PBS fertig |
 | 22.10.2026 | PBS fertig, Restore-Test bestanden, Pause aufgehoben |
 | 10.11.2026 | Entscheidung Windows Server 2025 statt 2022. Planung ergänzt: Papierkorb, Funktionsebene 2016, Port 9389, Anmeldeverbot DA, BitLocker/PIN-GPO, Lizenzierung ergänzt |
-| 10.11.2026 | Installation Windows Server 2025 Standard gestartet. Doku-Struktur intern/öffentlich angelegt |
+| 10.11.2026 | Umsetzung gestartet, Download Windows Server 2025 Standard. Doku-Struktur intern/öffentlich angelegt |
 | 11.11.2026 | Festgelegt: Name in der öffentlichen Fassung, Kontenkonzept mit drei Konten plus Notfallkonto, Repo-Aufteilung intern/öffentlich |
+| 11.11.2026 | Speicher geprüft: VM auf `local-lvm`, ISOs auf `local`. VM-ID 101 festgelegt |
 
