@@ -16,7 +16,7 @@
 | **Projekt** | Eigene AD-Domäne für das Heimnetz: zentrale Anmeldung an allen Windows-Clients, getrennte Benutzer- und Admin-Konten, GPOs, Windows LAPS |
 | **Zeitraum** | Planung ab 21.10.2026, Umsetzung ab 10.11.2026 |
 | **Umsetzung** | Matija Tasic |
-| **Stand** | 11.11.2026, VM-Vorbereitung, Download Windows Server 2025 läuft |
+| **Stand** | 11.11.2026, VM angelegt, Installation Windows Server 2025 |
 | **Plattform** | Windows Server 2025 Standard (Desktop Experience), Proxmox VE 9.2 auf Dell Wyse 5070, OPNsense, Proxmox Backup Server |
 
 > [!TIP]
@@ -129,6 +129,8 @@ Hostnamen: maximal 15 Zeichen (NetBIOS-Grenze), nur Buchstaben, Ziffern, Bindest
 | Storage-Pool | `local-lvm` (lvmthin, 131 GiB frei) | Snapshots belegen im Thin-Pool zusätzlich Platz, daher nicht dauerhaft liegen lassen |
 | VM-ID | 101 | |
 | Sonstiges | vmgenid aktiv, QEMU Guest Agent, virtio-win (stable) | vmgenid schützt AD bei Restore/Snapshot-Rücksprung |
+| Start | Start at boot, Order 2, Startup delay 60 s (OPNsense = Order 1) | DC startet erst, wenn das Netz steht |
+| Maschinentyp | gepinnt auf `pc-q35-11.0+pve2` (automatisch bei Windows) | stabile virtuelle Hardware über Proxmox-Updates hinweg |
 
 > [!WARNING]
 > virtio-win 0.1.285 hatte unter Server 2025 einen vioscsi-Fehler bei hoher Last. Vor dem Download die Known Issues im Proxmox-Wiki „Windows VirtIO Drivers“ prüfen.
@@ -471,4 +473,5 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 11.11.2026 | Speicher geprüft: VM auf `local-lvm`, ISOs auf `local`. VM-ID 101 festgelegt |
 | 11.11.2026 | Installationsmedium: Evaluation-ISO, Umwandlung in Standard mit vorhandenem Key vor dem Hochstufen |
 | 11.11.2026 | ISOs auf `local` hochgeladen: Server 2025 (de-de) und virtio-win 0.1.302 |
+| 11.11.2026 | VM 101 `dc01` angelegt und geprüft (`qm config`): vmgenid gesetzt, Start-Reihenfolge OPNsense → DC01 |
 
