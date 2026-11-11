@@ -189,7 +189,7 @@ Jede Phase beginnt mit einem Sicherungspunkt und endet mit einem Test. Befehle i
 |---|---|---|
 | 1 | Freien Speicher und Storage-Pool auf `pve01` prüfen (`pvesm status`) | erledigt: `local-lvm` für die VM, `local` für ISOs |
 | 2 | CPU-Flags dokumentieren: `lscpu \| grep -ow -e aes -e avx2` | offen |
-| 3 | ISOs: Windows Server 2025 (Evaluation Center, Umwandlung in Phase 3) und virtio-win stable; Microsoft veröffentlicht dort keine Prüfsumme, SHA256 wird notiert | in Arbeit |
+| 3 | ISOs: Windows Server 2025 Build 26100.32230, Evaluation, de-de (Umwandlung in Phase 3); virtio-win 0.1.302 stable. Microsoft veröffentlicht für die Eval-ISO keine Prüfsumme, SHA256 `64bd88c4cc99068ffc9727cc08f2e56ddc5707d175323f5aa0a8ab1d63d0815f` notiert | erledigt |
 | 4 | Bestandsaufnahme Clients: Windows-Version, Konto-Typ, IP fest/DHCP, BitLocker | teilweise (alle Win 11 Pro) |
 | 5 | Datensicherung aller Benutzerprofile inkl. BitLocker-Schlüssel | offen |
 | 6 | Lokales Fallback-Admin-Konto auf jedem Client prüfen | offen |
@@ -470,4 +470,5 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 11.11.2026 | Festgelegt: Name in der öffentlichen Fassung, Kontenkonzept mit drei Konten plus Notfallkonto, Repo-Aufteilung intern/öffentlich |
 | 11.11.2026 | Speicher geprüft: VM auf `local-lvm`, ISOs auf `local`. VM-ID 101 festgelegt |
 | 11.11.2026 | Installationsmedium: Evaluation-ISO, Umwandlung in Standard mit vorhandenem Key vor dem Hochstufen |
+| 11.11.2026 | ISOs auf `local` hochgeladen: Server 2025 (de-de) und virtio-win 0.1.302 |
 
