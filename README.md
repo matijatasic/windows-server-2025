@@ -277,7 +277,7 @@ DISM /online /Set-Edition:ServerStandard /ProductKey:<KEY> /AcceptEula
 slmgr /dlv                                # darf kein "Eval" mehr enthalten
 slmgr /ato                                # Aktivierung, Status muss "Lizenziert" sein
 ```
-   Schlägt die Aktivierung fehl (z. B. 0xC004C003, Key gesperrt): Snapshot `vor_edition` zurückrollen und als Evaluation weiterarbeiten. Prüfen mit `slmgr /dlv`: Lizenzstatus, Restlaufzeit, Rearm-Anzahl. PowerShell speichert eingegebene Befehle (auch Keys) im Verlauf, danach löschen: `Remove-Item (Get-PSReadLineOption).HistorySavePath`.
+   Schlägt die Aktivierung fehl (z. B. 0xC004C003, Key gesperrt): Snapshot `vor_edition` zurückrollen und als Evaluation weiterarbeiten. Prüfen mit `slmgr /dlv`: Lizenzstatus, Restlaufzeit, Rearm-Anzahl. PowerShell speichert eingegebene Befehle (auch Keys) im Verlauf, danach löschen: `Remove-Item (Get-PSReadLineOption).HistorySavePath`. DISM schreibt den Key im Klartext in `C:\Windows\Logs\DISM\dism.log`; prüfen mit `Select-String -Path C:\Windows\Logs\DISM\dism.log -Pattern "ProductKey"` und das Log gegebenenfalls löschen.
 7. **Snapshot „Basis-Installation“** in Proxmox.
 
 **Beobachtungen nach der Installation:**
