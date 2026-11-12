@@ -16,7 +16,7 @@
 | **Projekt** | Eigene AD-Domäne für das Heimnetz: zentrale Anmeldung an allen Windows-Clients, getrennte Benutzer- und Admin-Konten, GPOs, Windows LAPS |
 | **Zeitraum** | Planung ab 21.10.2026, Umsetzung ab 10.11.2026 |
 | **Umsetzung** | Matija Tasic |
-| **Stand** | 12.11.2026, Windows Server installiert, VLAN 10 und Firewall-Regeln aktiv |
+| **Stand** | 12.11.2026, Windows Server (Evaluation) im VLAN 10 erreichbar, Grundkonfiguration läuft |
 | **Plattform** | Windows Server 2025 Standard (Desktop Experience), Proxmox VE 9.2 auf Dell Wyse 5070, OPNsense, Proxmox Backup Server |
 
 > [!TIP]
@@ -173,6 +173,7 @@ home.example.com
 | 21.10.2026 | VPN als eigenes Projekt | |
 | 10.11.2026 | Windows Server 2025 Standard, Desktop Experience, ein DC | Key für 2025 vorhanden. Desktop Experience ↔ Core ist nach der Installation nicht mehr umstellbar |
 | 10.11.2026 | Doku in zwei Fassungen auf GitHub (bestätigt 11.11.2026) | intern (privat) mit echten Daten, öffentlich zensiert, erzeugt per Skript mit Leak-Check |
+| 12.11.2026 | Betrieb vorerst als **Evaluation** (180 Tage, 1 Rearm) | Der vorhandene Key ließ sich nicht aktivieren (0xC004C003). Umwandlung per Snapshot zurückgerollt. Folge: Ein Eval-DC lässt sich nicht in Standard umwandeln, mit gültigem Key wird später ein neuer DC aufgebaut und die Rollen werden migriert |
 | offen | Funktionsebene **Windows Server 2016** (`WinThreshold`) | Vorschlag: Hochstufen geht jederzeit, zurück nicht. 2025 bringt in der Heimdomäne kaum Nutzen und schließt spätere DCs mit 2022 aus |
 | offen | NetBIOS-Name `HOME` | Vorschlag. Nach dem Hochstufen nicht mehr änderbar |
 | offen | AD-Papierkorb aktivieren | Vorschlag. Einzelne gelöschte Objekte zurückholen, ohne die ganze VM zurückzuspielen |
@@ -274,7 +275,9 @@ DISM /online /Get-TargetEditions          # ServerStandard muss aufgeführt sein
 DISM /online /Set-Edition:ServerStandard /ProductKey:<KEY> /AcceptEula
 # Neustart, danach:
 slmgr /dlv                                # darf kein "Eval" mehr enthalten
+slmgr /ato                                # Aktivierung, Status muss "Lizenziert" sein
 ```
+   Schlägt die Aktivierung fehl (z. B. 0xC004C003, Key gesperrt): Snapshot `vor_edition` zurückrollen und als Evaluation weiterarbeiten. Prüfen mit `slmgr /dlv`: Lizenzstatus, Restlaufzeit, Rearm-Anzahl. PowerShell speichert eingegebene Befehle (auch Keys) im Verlauf, danach löschen: `Remove-Item (Get-PSReadLineOption).HistorySavePath`.
 7. **Snapshot „Basis-Installation“** in Proxmox.
 
 **Beobachtungen nach der Installation:**
@@ -464,6 +467,7 @@ Add-Computer -DomainName "home.example.com" -Restart
 | Edition | Desktop Experience ↔ Core nicht umstellbar | bei Installation entschieden |
 | Funktionsebene 2025 | nur noch DCs mit 2025 möglich | Vorschlag 2016 |
 | Lizenzierung | AD-Zugriff erfordert laut Microsoft CALs | Lizenzumfang des Keys prüfen |
+| Evaluation läuft ab (180 Tage + 1 Rearm, ab 12.11.2026) | Server fährt nach Ablauf regelmäßig herunter, kein Weg zu Standard bei einem DC | Ablaufdatum im Kalender; rechtzeitig gültigen Key beschaffen, neuen DC aufbauen, Rollen migrieren, alten DC herabstufen |
 
 **Rollback-Grundsatz:** Vor jeder Phase Konfig-Export bzw. Snapshot, Stand im Journal notieren. Immer zuerst ein Pilot, dann einzeln.
 
@@ -504,4 +508,6 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 11.11.2026 | VM 101 `dc01` angelegt und geprüft (`qm config`): vmgenid gesetzt, Start-Reihenfolge OPNsense → DC01 |
 | 12.11.2026 | Windows Server 2025 Standard Evaluation (Desktopdarstellung) installiert, vioscsi-Treiber im Setup geladen, virtio-win-guest-tools installiert, Guest Agent erreichbar. Noch ohne Netz (VLAN 10 fehlt, nur APIPA-Adresse) |
 | 12.11.2026 | Phase 2: Sicherung (Konfig-Export, Snapshot `vor_vlan10`, `interfaces`-Backup). VLAN-Gerät `vlan0.10`, Interface SERVER 10.0.10.1/24. Aliase und Regeln für PRIVAT und SERVER angelegt, Internet in VLAN 20 nach dem Übernehmen geprüft |
+| 12.11.2026 | DC-IP 10.0.10.10/24 gesetzt, Tests ping Gateway, DNS-Auflösung und HTTPS (`tnc … -port 443`) bestanden. RDP aktiviert und getestet |
+| 12.11.2026 | Snapshot `vor_edition`. Umwandlung Eval → ServerStandard per DISM erfolgreich, Aktivierung mit 0xC004C003 abgelehnt. Rollback auf `vor_edition`, Status: ServerStandardEval, lizenziert, 180 Tage, 1 Rearm. Thin-Pool-Belegung geprüft (ca. 16 %) |
 
