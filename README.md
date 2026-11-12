@@ -510,4 +510,5 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 12.11.2026 | Phase 2: Sicherung (Konfig-Export, Snapshot `vor_vlan10`, `interfaces`-Backup). VLAN-Gerät `vlan0.10`, Interface SERVER 10.0.10.1/24. Aliase und Regeln für PRIVAT und SERVER angelegt, Internet in VLAN 20 nach dem Übernehmen geprüft |
 | 12.11.2026 | DC-IP 10.0.10.10/24 gesetzt, Tests ping Gateway, DNS-Auflösung und HTTPS (`tnc … -port 443`) bestanden. RDP aktiviert und getestet |
 | 12.11.2026 | Snapshot `vor_edition`. Umwandlung Eval → ServerStandard per DISM erfolgreich, Aktivierung mit 0xC004C003 abgelehnt. Rollback auf `vor_edition`, Status: ServerStandardEval, lizenziert, 180 Tage, 1 Rearm. Thin-Pool-Belegung geprüft (ca. 16 %) |
+| 12.11.2026 | Hostname DC01 und Zeitzone gesetzt, alle Windows-Updates installiert. Snapshot `basis_eval` (Aufgabe 19) |
 
