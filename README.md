@@ -459,6 +459,7 @@ Add-Computer -DomainName "home.example.com" -Restart
 | Zeitabweichung > 5 Min. | Kerberos schlägt fehl | NTP-Kette OPNsense → DC → Clients, T6 |
 | DC-Rollback nach Beitritten | Vertrauensstellung defekt | `Test-ComputerSecureChannel -Repair`; Papierkorb statt Restore |
 | Speicher 256-GB-SSD | VM, Snapshots, lokale Backups voll | Aufgabe 1; Snapshots nicht dauerhaft liegen lassen |
+| Thin-Pool überbucht (Summe aller Thin-Disks > Pool, kein Autoextend) | Pool real voll → VMs frieren ein, Datenverlust möglich | Füllstand `lvs pve/data` (Data%) im Blick, Grenze ca. 80 %; Snapshots nach Erfolg löschen; Backups liegen auf PBS, nicht im Pool |
 | Domänen-/NetBIOS-Name | nach Hochstufen praktisch fix | vor Phase 4 final entscheiden |
 | Edition | Desktop Experience ↔ Core nicht umstellbar | bei Installation entschieden |
 | Funktionsebene 2025 | nur noch DCs mit 2025 möglich | Vorschlag 2016 |
