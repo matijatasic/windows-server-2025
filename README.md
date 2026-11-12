@@ -16,7 +16,7 @@
 | **Projekt** | Eigene AD-Domäne für das Heimnetz: zentrale Anmeldung an allen Windows-Clients, getrennte Benutzer- und Admin-Konten, GPOs, Windows LAPS |
 | **Zeitraum** | Planung ab 21.10.2026, Umsetzung ab 10.11.2026 |
 | **Umsetzung** | Matija Tasic |
-| **Stand** | 11.11.2026, VM angelegt, Installation Windows Server 2025 |
+| **Stand** | 12.11.2026, Windows Server installiert, als Nächstes VLAN 10 auf der OPNsense |
 | **Plattform** | Windows Server 2025 Standard (Desktop Experience), Proxmox VE 9.2 auf Dell Wyse 5070, OPNsense, Proxmox Backup Server |
 
 > [!TIP]
@@ -255,6 +255,11 @@ slmgr /dlv                                # darf kein "Eval" mehr enthalten
 ```
 7. **Snapshot „Basis-Installation“** in Proxmox.
 
+**Beobachtungen nach der Installation:**
+- Proxmox zeigt die RAM-Belegung mit 100 % an. Ohne Ballooning-Gerät sieht Proxmox nicht in die VM hinein; den echten Verbrauch zeigt der Task-Manager in der VM.
+- In der ersten Stunde nach der Installation liegt die CPU-Last nahe 100 % (Defender, .NET-Optimierung, Indexierung). Auf der Gemini-Lake-CPU ist das erwartbar.
+- Guest Agent prüfen: `qm agent 101 ping` auf dem Proxmox-Host.
+
 **Rollback:** VM löschen und neu anlegen; nach Schritt 7: Snapshot zurück.
 
 ### Phase 4 · AD DS und DNS
@@ -474,4 +479,5 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 11.11.2026 | Installationsmedium: Evaluation-ISO, Umwandlung in Standard mit vorhandenem Key vor dem Hochstufen |
 | 11.11.2026 | ISOs auf `local` hochgeladen: Server 2025 (de-de) und virtio-win 0.1.302 |
 | 11.11.2026 | VM 101 `dc01` angelegt und geprüft (`qm config`): vmgenid gesetzt, Start-Reihenfolge OPNsense → DC01 |
+| 12.11.2026 | Windows Server 2025 Standard Evaluation (Desktopdarstellung) installiert, vioscsi-Treiber im Setup geladen, virtio-win-guest-tools installiert, Guest Agent erreichbar. Noch ohne Netz (VLAN 10 fehlt, nur APIPA-Adresse) |
 
