@@ -16,7 +16,7 @@
 | **Projekt** | Eigene AD-Domäne für das Heimnetz: zentrale Anmeldung an allen Windows-Clients, getrennte Benutzer- und Admin-Konten, GPOs, Windows LAPS |
 | **Zeitraum** | Planung ab 21.10.2026, Umsetzung ab 10.11.2026 |
 | **Umsetzung** | Matija Tasic |
-| **Stand** | 12.11.2026, Windows Server installiert, als Nächstes VLAN 10 auf der OPNsense |
+| **Stand** | 12.11.2026, Windows Server installiert, VLAN 10 und Firewall-Regeln aktiv |
 | **Plattform** | Windows Server 2025 Standard (Desktop Experience), Proxmox VE 9.2 auf Dell Wyse 5070, OPNsense, Proxmox Backup Server |
 
 > [!TIP]
@@ -205,27 +205,49 @@ Offen: Hostnamen (Aufgabe 8), NetBIOS-Name (9), Kontenkonzept bestätigen (10), 
 Sicherung vorher: OPNsense-Konfig exportieren, VM-Snapshot OPNsense, `/etc/network/interfaces` auf `pve01` sichern.
 
 1. VLAN-Gerät auf `vtnet1`, Tag 10, Interface `SERVER` 10.0.10.1/24, kein DHCP.
-2. Aliase und Regeln:
+2. Aliase und Regeln (umgesetzt 12.11.2026). Der bestehende Alias `ADMIN_PCS` aus der OPNsense-Segmentierung (Zugriff FRITZ!Box und Management) bleibt unverändert; für den DC gibt es eigene Aliase, damit sich beide Zugriffe unabhängig voneinander einschränken lassen.
 
-| Alias | Inhalt |
-|---|---|
-| `DC01` | 10.0.10.10 |
-| `AD_PORTS` | TCP/UDP 53, 88, 389, 464 · UDP 123 · TCP 135, 445, 636, 3268–3269, 49152–65535 |
-| `ADMIN_PCS` | Admin-Clients (offen) |
+| Alias | Typ | Inhalt |
+|---|---|---|
+| `DC01` | Host | 10.0.10.10 |
+| `DC_ADMIN_PCS` | Host | 10.0.20.10, .20.20, .20.30, .20.40 |
+| `AD_TCP` | Port | 53, 88, 135, 389, 445, 464, 636, 3268:3269, 49152:65535 |
+| `AD_UDP` | Port | 53, 88, 123, 389, 464 |
+| `DC_ADMIN_PORTS` | Port | 3389 (RDP), 9389 (ADWS für RSAT/PowerShell) |
+| `WEB_PORTS` | Port | 80, 443 |
+| `PRIVATE_NETS` | Netz | bestehend: alle privaten Adressbereiche |
 
-| Quelle → Ziel | Erlaubt |
-|---|---|
-| PRIVAT → DC01 | `AD_PORTS`, ICMP |
-| ADMIN_PCS → DC01 | zusätzlich RDP 3389 und **TCP 9389 (ADWS, für RSAT/PowerShell-AD-Modul)** |
-| SERVER → OPNsense | DNS 53, NTP 123 |
-| SERVER → Internet | 80/443 (Windows Update, Aktivierung) |
-| SERVER → andere Netze | blockiert |
-| IoT, Gäste, Lab, Management → SERVER | blockiert |
-| WAN → SERVER | blockiert |
+`AD_PORTS` aus der Planung ist in `AD_TCP` und `AD_UDP` aufgeteilt, damit jede Regel nur das Protokoll erlaubt, das AD tatsächlich nutzt.
+
+**Interface PRIVAT** – die neuen Regeln stehen vor der bestehenden Regel „PRIVAT – Block – interne Netze“:
+
+| Regel | Protokoll | Quelle → Ziel : Port |
+|---|---|---|
+| PRIVAT – AD TCP – DC01 | TCP | PRIVAT net → `DC01` : `AD_TCP` |
+| PRIVAT – AD UDP – DC01 | UDP | PRIVAT net → `DC01` : `AD_UDP` |
+| PRIVAT – ICMP – DC01 | ICMP | PRIVAT net → `DC01` |
+| PRIVAT – Admin – DC01 | TCP | `DC_ADMIN_PCS` → `DC01` : `DC_ADMIN_PORTS` |
+
+**Interface SERVER** – in genau dieser Reihenfolge:
+
+| Regel | Aktion | Protokoll | Quelle → Ziel : Port |
+|---|---|---|---|
+| SERVER – DNS – Firewall | Pass | TCP/UDP | SERVER net → This Firewall : 53 |
+| SERVER – NTP – Firewall | Pass | UDP | SERVER net → This Firewall : 123 |
+| SERVER – ICMP – Firewall | Pass | ICMP | SERVER net → This Firewall |
+| SERVER – Block – interne Netze | Block (Log) | any | SERVER net → `PRIVATE_NETS` |
+| SERVER – Internet – Web | Pass | TCP | SERVER net → any : `WEB_PORTS` |
+
+IoT, Gäste, Lab und Management erreichen SERVER nicht (bestehende Block-Regeln), WAN → SERVER ist geblockt.
+
+> [!NOTE]
+> In der neuen Regelansicht der OPNsense landen neue Regeln am Ende ihres Interface-Blocks. Verschieben: Regel markieren, in der Zielzeile auf „←“ klicken (markierte Regeln davor einfügen). Dabei darauf achten, dass nur die gewünschte Regel markiert ist. Beim Kopieren einer Regel vor dem Speichern Interface, Quelle und Ziel prüfen.
 
 3. DHCP VLAN 20: Domänenname `home.example.com` als Suchdomäne mitgeben (DNS-Server erst in Phase 6 umstellen).
 
-**Rollback:** Konfig-Export zurückspielen oder Snapshot der OPNsense.
+**Rollback:** Konfig-Export zurückspielen oder Snapshot `vor_vlan10` der OPNsense.
+
+Proxmox: `vmbr1` ist bereits VLAN-aware (`bridge-vids 2-4094`), keine Änderung nötig. VLAN-10-Broadcasts gehen dadurch getaggt auch über `nic0` zum physischen Switch.
 
 ### Phase 3 · VM und Installation
 
@@ -480,4 +502,5 @@ Add-Computer -DomainName "home.example.com" -Restart
 | 11.11.2026 | ISOs auf `local` hochgeladen: Server 2025 (de-de) und virtio-win 0.1.302 |
 | 11.11.2026 | VM 101 `dc01` angelegt und geprüft (`qm config`): vmgenid gesetzt, Start-Reihenfolge OPNsense → DC01 |
 | 12.11.2026 | Windows Server 2025 Standard Evaluation (Desktopdarstellung) installiert, vioscsi-Treiber im Setup geladen, virtio-win-guest-tools installiert, Guest Agent erreichbar. Noch ohne Netz (VLAN 10 fehlt, nur APIPA-Adresse) |
+| 12.11.2026 | Phase 2: Sicherung (Konfig-Export, Snapshot `vor_vlan10`, `interfaces`-Backup). VLAN-Gerät `vlan0.10`, Interface SERVER 10.0.10.1/24. Aliase und Regeln für PRIVAT und SERVER angelegt, Internet in VLAN 20 nach dem Übernehmen geprüft |
 
